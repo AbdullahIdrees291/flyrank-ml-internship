@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Ranking Content Refresh Opportunities | FlyRank ML Research</title>
+
+  <style>
+    :root {
+      --bg: #f7f8fc;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #667085;
+      --primary: #2563eb;
+      --primary-dark: #1e40af;
+      --border: #e5e7eb;
+      --green: #16803c;
+      --orange: #b45309;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    .container {
+      width: min(1100px, 92%);
+      margin: auto;
+    }
+
+    header {
+      background:
+        linear-gradient(135deg, #0f172a, #1e3a8a);
+      color: white;
+      padding: 80px 0 70px;
+    }
+
+    .eyebrow {
+      color: #93c5fd;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-size: 14px;
+    }
+
+    h1 {
+      font-size: clamp(36px, 6vw, 64px);
+      line-height: 1.08;
+      margin: 18px 0;
+      max-width: 900px;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: #dbeafe;
+      max-width: 800px;
+    }
+
+    .author {
+      margin-top: 25px;
+      color: #bfdbfe;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(255,255,255,0.96);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+    }
+
+    nav .container {
+      display: flex;
+      gap: 22px;
+      overflow-x: auto;
+      padding: 13px 0;
+    }
+
+    nav a {
+      color: var(--text);
+      text-decoration: none;
+      white-space: nowrap;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    nav a:hover {
+      color: var(--primary);
+    }
+
+    section {
+      padding: 55px 0;
+    }
+
+    .section-number {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    h2 {
+      font-size: 32px;
+      margin: 5px 0 20px;
+    }
+
+    h3 {
+      font-size: 21px;
+      margin-top: 30px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      margin: 20px 0;
+      box-shadow: 0 5px 20px rgba(15,23,42,0.04);
+    }
+
+    .abstract {
+      border-left: 5px solid var(--primary);
+      font-size: 18px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin: 25px 0;
+    }
+
+    .metric {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      text-align: center;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 32px;
+      color: var(--primary);
+    }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 13px 15px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+
+    th {
+      background: #eef2ff;
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .highlight {
+      background: #eff6ff;
+      border-left: 4px solid var(--primary);
+      padding: 18px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .warning {
+      background: #fff7ed;
+      border-left: 4px solid var(--orange);
+      padding: 18px;
+      border-radius: 8px;
+      margin: 20px 0;
+    }
+
+    .recommendations {
+      counter-reset: recommendation;
+      padding: 0;
+      list-style: none;
+    }
+
+    .recommendations li {
+      counter-increment: recommendation;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 22px 22px 65px;
+      margin: 15px 0;
+      position: relative;
+    }
+
+    .recommendations li::before {
+      content: counter(recommendation);
+      position: absolute;
+      left: 20px;
+      top: 20px;
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 800;
+    }
+
+    .bar-chart {
+      margin-top: 25px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 180px 1fr 70px;
+      gap: 12px;
+      align-items: center;
+      margin: 12px 0;
+    }
+
+    .bar {
+      height: 14px;
+      background: #dbeafe;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #2563eb, #60a5fa);
+      border-radius: 20px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .button {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      padding: 11px 18px;
+      border-radius: 9px;
+      font-weight: 700;
+    }
+
+    .button:hover {
+      background: var(--primary-dark);
+    }
+
+    footer {
+      background: #0f172a;
+      color: #cbd5e1;
+      padding: 45px 0;
+    }
+
+    footer a {
+      color: #93c5fd;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 800px) {
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .bar-row {
+        grid-template-columns: 120px 1fr 55px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        padding: 55px 0;
+      }
+
+      section {
+        padding: 40px 0;
+      }
+
+      h2 {
+        font-size: 27px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="container">
+    <div class="eyebrow">Machine Learning Research · FlyRank Internship</div>
+
+    <h1>Ranking Content Refresh Opportunities from Historical Search Signals</h1>
+
+    <p class="subtitle">
+      A time-aware machine-learning decision-support analysis for prioritizing
+      pages for content review or refresh.
+    </p>
+
+    <p class="author">
+      Abdullah Idrees · ML-11 Capstone
+    </p>
+  </div>
+</header>
+
+<nav>
+  <div class="container">
+    <a href="#abstract">Abstract</a>
+    <a href="#question">Question</a>
+    <a href="#data">Data</a>
+    <a href="#method">Methodology</a>
+    <a href="#results">Results</a>
+    <a href="#limitations">Limitations</a>
+    <a href="#recommendations">Recommendations</a>
+    <a href="#reproducibility">Reproducibility</a>
+    <a href="#credit">Data Credit</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ABSTRACT -->
+  <section id="abstract">
+    <div class="container">
+
+      <div class="section-number">Abstract</div>
+
+      <div class="card abstract">
+
+        <p>
+          This study asks whether historical search-performance signals can
+          help rank pages for content review. Using anonymized FlyRank
+          warehouse data, I aggregated page-level search and engagement
+          signals and trained a machine-learning model to identify pages
+          associated with positive next-month click outcomes. The model
+          achieved a ROC-AUC of 0.801 and 36.2% precision on the held-out
+          period, compared with a majority-class baseline accuracy of 0.891.
+          The results suggest that impressions and organic sessions were the
+          strongest measured signals for the model's ranking decisions.
+          The resulting scores are intended as directional decision-support
+          recommendations for content review, not as causal evidence that
+          refreshing a page will improve future performance.
+        </p>
+
+      </div>
+
+      <div class="metrics">
+
+        <div class="metric">
+          <strong>0.801</strong>
+          <span>ROC-AUC</span>
+        </div>
+
+        <div class="metric">
+          <strong>36.2%</strong>
+          <span>Precision</span>
+        </div>
+
+        <div class="metric">
+          <strong>15.5%</strong>
+          <span>Recall</span>
+        </div>
+
+        <div class="metric">
+          <strong>0.217</strong>
+          <span>F1 Score</span>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- QUESTION -->
+  <section id="question">
+    <div class="container">
+
+      <div class="section-number">1 · Question</div>
+      <h2>Research Question</h2>
+
+      <div class="card">
+
+        <h3>
+          Can historical search-performance signals be used to rank pages
+          that are the strongest candidates for content refresh or review?
+        </h3>
+
+        <p>
+          The goal is to help a content team decide which pages should be
+          reviewed first by producing a ranked refresh-opportunity score
+          based on measurable search-performance signals.
+        </p>
+
+        <div class="highlight">
+          <strong>Decision supported:</strong>
+          This is a decision-support analysis. It does not attempt to explain
+          Google's ranking algorithm and does not establish causal effects
+          of content changes.
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- DATA -->
+  <section id="data">
+    <div class="container">
+
+      <div class="section-number">2 · Data</div>
+      <h2>Dataset & Data Preparation</h2>
+
+      <div class="card">
+
+        <p>
+          This analysis uses the approved FlyRank internship warehouse release
+          available through Hugging Face. The analysis focuses on anonymized
+          search-performance data and aggregates observations at the page and
+          month level.
+        </p>
+
+        <h3>Warehouse coverage</h3>
+
+        <table>
+          <tr>
+            <th>Item</th>
+            <th>Value</th>
+          </tr>
+
+          <tr>
+            <td>Reporting period</td>
+            <td>2025-01-27 to 2026-06-30</td>
+          </tr>
+
+          <tr>
+            <td>Total warehouse rows</td>
+            <td>78,835,655</td>
+          </tr>
+
+          <tr>
+            <td>Unique pages</td>
+            <td>427,292</td>
+          </tr>
+
+          <tr>
+            <td>Unique clients</td>
+            <td>70</td>
+          </tr>
+
+          <tr>
+            <td>Monthly feature rows</td>
+            <td>2,871,202</td>
+          </tr>
+
+          <tr>
+            <td>Model rows</td>
+            <td>2,443,910</td>
+          </tr>
+        </table>
+
+        <h3>Public-safety exclusions</h3>
+
+        <p>
+          Client-identifying information, domains, URLs, private search
+          queries, credentials, and raw private exports are excluded from
+          the public analysis.
+        </p>
+
+        <p>
+          Daily performance observations were aggregated into monthly
+          page-level features. Rows without an available future month were
+          removed because they could not receive the next-month outcome label.
+        </p>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- METHODOLOGY -->
+  <section id="method">
+    <div class="container">
+
+      <div class="section-number">3 · Methodology</div>
+      <h2>Methodology</h2>
+
+      <div class="card">
+
+        <h3>Features</h3>
+
+        <p>
+          The model uses nine historical page-level signals:
+        </p>
+
+        <ul>
+          <li>Impressions</li>
+          <li>Clicks</li>
+          <li>Average position</li>
+          <li>Pageviews</li>
+          <li>Sessions</li>
+          <li>Engaged sessions</li>
+          <li>Engagement seconds</li>
+          <li>Organic sessions</li>
+          <li>AI sessions</li>
+        </ul>
+
+        <h3>Label definition</h3>
+
+        <p>
+          A positive outcome is defined when a page receives more clicks in
+          the following month than in the current month.
+        </p>
+
+        <div class="highlight">
+          <strong>Positive outcome:</strong>
+          next-month clicks &gt; current-month clicks
+        </div>
+
+        <h3>Model</h3>
+
+        <p>
+          The final model is a
+          <strong>HistGradientBoostingClassifier</strong>
+          trained using the historical features above.
+        </p>
+
+        <h3>Baseline</h3>
+
+        <p>
+          The baseline always predicts the majority class. On the held-out
+          test period, this baseline achieved 0.891 accuracy.
+        </p>
+
+        <h3>Validation design</h3>
+
+        <p>
+          A time-based split was used to avoid mixing future observations
+          into training data.
+        </p>
+
+        <table>
+          <tr>
+            <th>Split</th>
+            <th>Period</th>
+          </tr>
+
+          <tr>
+            <td>Training</td>
+            <td>2025-01 through 2026-02</td>
+          </tr>
+
+          <tr>
+            <td>Held-out test</td>
+            <td>2026-03 through 2026-05</td>
+          </tr>
+        </table>
+
+        <h3>Leakage checks</h3>
+
+        <p>
+          The future outcome fields
+          <code>next_month_clicks</code> and
+          <code>positive_next_month</code>
+          were not included as model features.
+        </p>
+
+        <p>
+          Features were constructed from the current month before the
+          next-month outcome was evaluated.
+        </p>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- RESULTS -->
+  <section id="results">
+    <div class="container">
+
+      <div class="section-number">4 · Results</div>
+      <h2>Model vs Baseline</h2>
+
+      <div class="card">
+
+        <p>
+          Both the baseline and the machine-learning model were evaluated on
+          the same held-out time period.
+        </p>
+
+        <table>
+          <tr>
+            <th>Metric</th>
+            <th>Baseline</th>
+            <th>ML Model</th>
+          </tr>
+
+          <tr>
+            <td>Accuracy</td>
+            <td>0.891</td>
+            <td>0.878</td>
+          </tr>
+
+          <tr>
+            <td>Precision</td>
+            <td>0.000</td>
+            <td><strong>0.362</strong></td>
+          </tr>
+
+          <tr>
+            <td>Recall</td>
+            <td>0.000</td>
+            <td>0.155</td>
+          </tr>
+
+          <tr>
+            <td>F1</td>
+            <td>0.000</td>
+            <td>0.217</td>
+          </tr>
+
+          <tr>
+            <td>ROC-AUC</td>
+            <td>—</td>
+            <td><strong>0.801</strong></td>
+          </tr>
+        </table>
+
+        <div class="warning">
+
+          <strong>Interpretation:</strong>
+
+          The model achieved useful ranking/discrimination signal
+          (ROC-AUC = 0.801) and identified a subset of positive-outcome
+          pages with 36.2% precision. However, overall accuracy was below
+          the majority-class baseline. The model should therefore be
+          interpreted as a ranking and decision-support tool rather than
+          an accuracy-optimized classifier.
+
+        </div>
+
+      </div>
+
+
+      <div class="card">
+
+        <h3>Feature importance</h3>
+
+        <p>
+          Permutation importance shows which measured features contributed
+          most to the model's ROC-AUC on the test set.
+        </p>
+
+        <div class="bar-chart">
+
+          <div class="bar-row">
+            <span>Impressions</span>
+            <div class="bar">
+              <div class="bar-fill" style="width:100%"></div>
+            </div>
+            <strong>0.196</strong>
+          </div>
+
+          <div class="bar-row">
+            <span>Organic sessions</span>
+            <div class="bar">
+              <div class="bar-fill" style="width:27%"></div>
+            </div>
+            <strong>0.053</strong>
+          </div>
+
+          <div class="bar-row">
+            <span>Avg position</span>
+            <div class="bar">
+              <div class="bar-fill" style="width:8%"></div>
+            </div>
+            <strong>0.015</strong>
+          </div>
+
+          <div class="bar-row">
+            <span>Pageviews</span>
+            <div class="bar">
+              <div class="bar-fill" style="width:4.5%"></div>
+            </div>
+            <strong>0.009</strong>
+          </div>
+
+          <div class="bar-row">
+            <span>Clicks</span>
+            <div class="bar">
+              <div class="bar-fill" style="width:2%"></div>
+            </div>
+            <strong>0.004</strong>
+          </div>
+
+          <div class="bar-row">
+            <span>Engagement sec.</span>
+            <div class="bar">
+              <div class="bar-fill" style="width:0.5%"></div>
+            </div>
+            <strong>0.0003</strong>
+          </div>
+
+          <div class="bar-row">
+            <span>AI sessions</span>
+            <div class="bar">
+              <div class="bar-fill" style="width:0.4%"></div>
+            </div>
+            <strong>0.0002</strong>
+          </div>
+
+        </div>
+
+        <p class="small">
+          Permutation importance describes model-level signal, not causal
+          importance.
+        </p>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- LIMITATIONS -->
+  <section id="limitations">
+    <div class="container">
+
+      <div class="section-number">5 · Limitations</div>
+      <h2>Limitations & Honest Framing</h2>
+
+      <div class="card">
+
+        <ul>
+          <li>
+            The model uses historical aggregated search and engagement
+            signals, so the results describe observed associations rather
+            than causal effects.
+          </li>
+
+          <li>
+            The evaluation covers a limited future window and may not
+            represent performance in other periods.
+          </li>
+
+          <li>
+            The positive outcome is based on next-month clicks, so the model
+            is designed for prioritization rather than guaranteed prediction
+            of future success.
+          </li>
+
+          <li>
+            Some pages have missing GSC or GA4 data, limiting interpretation
+            of engagement-related features.
+          </li>
+
+          <li>
+            The analysis does not include content quality, topic, backlinks,
+            or other factors that may influence search performance.
+          </li>
+        </ul>
+
+        <div class="highlight">
+          The recommendations should therefore be treated as directional,
+          decision-support guidance for content review.
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- RECOMMENDATIONS -->
+  <section id="recommendations">
+    <div class="container">
+
+      <div class="section-number">6 · Ranked Recommendations</div>
+      <h2>Action Playbook</h2>
+
+      <div class="card">
+
+        <p>
+          The model produces an opportunity score for each page in the
+          held-out evaluation set. Higher scores indicate pages that the
+          model considers stronger candidates for review based on their
+          observed historical signals.
+        </p>
+
+        <ol class="recommendations">
+
+          <li>
+            <strong>Prioritize high opportunity scores.</strong>
+            Use the ranking as a manual review queue rather than treating
+            the score as a guaranteed refresh opportunity.
+          </li>
+
+          <li>
+            <strong>Investigate high impressions with few clicks.</strong>
+            Review title, snippet, and search-intent alignment for pages
+            receiving visibility but relatively few clicks.
+          </li>
+
+          <li>
+            <strong>Protect strong organic performance.</strong>
+            Pages with strong organic sessions should be reviewed carefully
+            before changes are made so existing performance is not damaged.
+          </li>
+
+          <li>
+            <strong>Investigate good position but low clicks.</strong>
+            These pages may deserve a review of click-through opportunity
+            and search-result presentation.
+          </li>
+
+          <li>
+            <strong>Verify missing engagement data.</strong>
+            Before acting on a recommendation, confirm whether GSC or GA4
+            data is actually available for the page.
+          </li>
+
+        </ol>
+
+        <div class="warning">
+          The ranking is directional and intended for decision support,
+          not as a causal recommendation that refreshing a page will improve
+          future performance.
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- REPRODUCIBILITY -->
+  <section id="reproducibility">
+    <div class="container">
+
+      <div class="section-number">7 · Reproducibility</div>
+      <h2>Artifacts & Reproducibility</h2>
+
+      <div class="card">
+
+        <p>
+          The analysis workflow is available in the GitHub repository.
+          The capstone notebook contains data loading, monthly aggregation,
+          feature construction, validation, model training, evaluation,
+          feature importance, and recommendation generation.
+        </p>
+
+        <div class="links">
+
+          <a
+            class="button"
+            href="https://github.com/AbdullahIdrees291/flyrank-ml-internship"
+            target="_blank"
+          >
+            GitHub Repository
+          </a>
+
+          <a
+            class="button"
+            href="https://colab.research.google.com/github/AbdullahIdrees291/flyrank-ml-internship/blob/main/work/notebooks/capstone.ipynb"
+            target="_blank"
+          >
+            Open Capstone in Colab
+          </a>
+
+        </div>
+
+        <h3>Main artifacts</h3>
+
+        <ol>
+          <li>Model-vs-baseline results table</li>
+          <li>Feature-importance analysis</li>
+          <li>Ranked refresh-opportunity scores</li>
+          <li>Capstone notebook containing the analysis workflow</li>
+        </ol>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ACKNOWLEDGMENTS -->
+  <section id="credit">
+    <div class="container">
+
+      <div class="section-number">8 · Acknowledgments & Data Credit</div>
+      <h2>Acknowledgments</h2>
+
+      <div class="card">
+
+        <p>
+          This project was completed as part of the FlyRank ML Internship.
+        </p>
+
+        <p>
+          <strong>Built on the FlyRank ML Internship dataset.</strong>
+        </p>
+
+        <p>
+          Data source:
+          <a
+            href="https://flyrank.ai"
+            target="_blank"
+          >
+            flyrank.ai
+          </a>
+        </p>
+
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+
+<footer>
+  <div class="container">
+
+    <h3>Research takeaway</h3>
+
+    <p>
+      Historical search-performance signals can provide useful ranking signal
+      for content-review prioritization, but the model should be used as
+      directional decision support rather than causal evidence.
+    </p>
+
+    <p class="small">
+      ML-11 Capstone · Machine Learning Track
+    </p>
+
+  </div>
+</footer>
+
+</body>
+</html>
